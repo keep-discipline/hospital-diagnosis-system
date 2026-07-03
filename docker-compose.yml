@@ -1,0 +1,39 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: hospital
+      POSTGRES_PASSWORD: hospital
+      POSTGRES_DB: hospital
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hospital"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://hospital:hospital@db:5432/hospital
+      EMBEDDING_MODEL: shibing624/text2vec-base-chinese
+      MODEL_PATH: /app/data/models/diagnosis_model.pt
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
