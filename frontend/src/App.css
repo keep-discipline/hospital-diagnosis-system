@@ -33,3 +33,274 @@ body {
   margin: 2rem auto;
   padding: 0 1rem;
 }
+
+/* ── Form Styles ─────────────────────────────── */
+
+.form-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.form-section h2 {
+  font-size: 1.15rem;
+  margin-bottom: 1rem;
+  color: #1e40af;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-row label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.875rem;
+  color: #4a5568;
+}
+
+.form-field-full {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.875rem;
+  color: #4a5568;
+}
+
+input, select, textarea {
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* ── Lab Grid ─────────────────────────────────── */
+
+.lab-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.lab-grid label {
+  font-size: 0.8rem;
+  color: #4a5568;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.input-with-unit input {
+  flex: 1;
+}
+
+.unit {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+/* ── Buttons ─────────────────────────────────── */
+
+.btn-submit {
+  display: block;
+  width: 100%;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, #1a56db, #1e40af);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.btn-submit:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+}
+
+/* ── Error ─────────────────────────────────── */
+
+.error-message {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+/* ── Result Card ──────────────────────────────── */
+
+.primary-diagnosis {
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.disease-label {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.confidence {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.25rem 1rem;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.top3-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.top3-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.risk-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.disease-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.probability {
+  font-size: 0.9rem;
+  color: #6b7280;
+  min-width: 3.5rem;
+  text-align: right;
+}
+
+.prob-bar {
+  grid-column: 1 / -1;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.prob-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* ── Treatment Box ─────────────────────────── */
+
+.treatment-box {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+}
+
+.treatment-box h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  color: #166534;
+}
+
+.treatment-box p {
+  font-size: 0.9rem;
+  color: #14532d;
+  line-height: 1.6;
+}
+
+/* ── Similar Cases ─────────────────────────── */
+
+.similar-case-item {
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.similar-case-item:last-child {
+  margin-bottom: 0;
+}
+
+.case-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.similarity-badge {
+  padding: 0.15rem 0.6rem;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.case-diagnosis {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.case-symptoms, .case-treatment {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  line-height: 1.5;
+}
+
+/* ── Empty State ──────────────────────────── */
+
+.empty-state, .empty-hint {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3af;
+}
