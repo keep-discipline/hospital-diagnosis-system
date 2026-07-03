@@ -1,0 +1,29 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 安装系统依赖（编译工具）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装 Python 依赖
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制应用代码
+COPY . .
+
+# 创建模型和数据目录
+RUN mkdir -p /app/data/models
+
+EXPOSE 8000
+
+# 启动: 模型不存在时训练，否则直接启动 API
+CMD ["sh", "-c", "\
+  if [ ! -f /app/data/models/diagnosis_model.pt ]; then \
+    echo '模型未训练，开始训练...' && python -m app.ml.train; \
+  else \
+    echo '模型已训练，跳过'; \
+  fi && \
+  uvicorn app.main:app --host 0.0.0.0 --port 8000"]
