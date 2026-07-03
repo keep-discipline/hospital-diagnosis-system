@@ -27,6 +27,10 @@ services:
       DATABASE_URL: postgresql+asyncpg://hospital:hospital@db:5432/hospital
       EMBEDDING_MODEL: shibing624/text2vec-base-chinese
       MODEL_PATH: /app/data/models/diagnosis_model.pt
+      HF_ENDPOINT: https://hf-mirror.com
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      - backend_data:/app/data
 
   frontend:
     build: ./frontend
@@ -37,3 +41,5 @@ services:
 
 volumes:
   pgdata:
+  hfcache:
+  backend_data:

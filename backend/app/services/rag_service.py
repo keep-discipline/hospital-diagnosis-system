@@ -9,6 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ml.embedding import embedding_model
 
 
+def _to_vector_str(embedding: list[float]) -> str:
+    """将 Python 列表转为 pgvector 可识别的字符串格式 '[x1,x2,...]'"""
+    return "[" + ",".join(str(v) for v in embedding) + "]"
+
+
 async def search_similar_patients(
     db: AsyncSession,
     symptom_text: str,
@@ -26,24 +31,25 @@ async def search_similar_patients(
     """
     # 1. 文字 → 向量
     query_embedding = embedding_model.encode(symptom_text)
+    vector_str = _to_vector_str(query_embedding)
 
     # 2. pgvector 余弦相似度查询（<=> 是 pgvector 的余弦距离操作符）
-    query = text("""
+    query = text(f"""
         SELECT
             id,
             symptom_description,
             diagnosis,
             treatment,
-            1 - (symptom_embedding <=> :embedding) AS similarity
+            1 - (symptom_embedding <=> CAST(:embedding AS vector)) AS similarity
         FROM patients
         WHERE symptom_embedding IS NOT NULL
-        ORDER BY symptom_embedding <=> :embedding
+        ORDER BY symptom_embedding <=> CAST(:embedding AS vector)
         LIMIT :top_k
     """)
 
     result = await db.execute(
         query,
-        {"embedding": query_embedding, "top_k": top_k},
+        {"embedding": vector_str, "top_k": top_k},
     )
     rows = result.fetchall()
 
@@ -66,13 +72,14 @@ async def update_patient_embedding(
 ) -> None:
     """为指定病人生成并更新 symptom embedding"""
     embedding = embedding_model.encode(symptom_text)
+    vector_str = _to_vector_str(embedding)
     update_query = text("""
         UPDATE patients
-        SET symptom_embedding = :embedding
+        SET symptom_embedding = CAST(:embedding AS vector)
         WHERE id = :patient_id
     """)
     await db.execute(
         update_query,
-        {"embedding": embedding, "patient_id": patient_id},
+        {"embedding": vector_str, "patient_id": patient_id},
     )
     await db.commit()
