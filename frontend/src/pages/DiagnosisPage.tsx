@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PatientForm from '../components/PatientForm';
 import LabReportForm from '../components/LabReportForm';
 import DiagnosisResultCard from '../components/DiagnosisResult';
 import SimilarCasesList from '../components/SimilarCases';
+import LoadingSkeleton from '../components/LoadingSkeleton';
 import { api } from '../services/api';
 import type { DiagnoseRequest, LabReport, DiagnoseResponse } from '../types/diagnosis';
 
@@ -23,34 +24,63 @@ const EMPTY_FORM: DiagnoseRequest = {
   lab_report: EMPTY_LAB,
 };
 
+/** 诊断步骤文案 */
+const DIAGNOSIS_STEPS = [
+  { label: '正在分析症状描述...', icon: '🔍' },
+  { label: '正在检索相似病例...', icon: '📚' },
+  { label: 'AI 模型正在诊断...', icon: '🧠' },
+  { label: '正在生成治疗方案...', icon: '💊' },
+];
+
 export default function DiagnosisPage() {
   const [formData, setFormData] = useState<DiagnoseRequest>(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<DiagnoseResponse | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  // 诊断过程中轮播步骤
+  useEffect(() => {
+    if (!loading) return;
+    const timer = setInterval(() => {
+      setCurrentStep((prev) => (prev < DIAGNOSIS_STEPS.length - 1 ? prev + 1 : prev));
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [loading]);
+
+  /** 校验表单，返回第一个错误或 null */
+  const validateForm = useCallback((): string | null => {
+    if (!formData.name.trim()) return '请输入姓名';
+    if (!formData.age || formData.age <= 0 || formData.age > 150) return '请输入有效年龄 (1-150)';
+    if (!formData.gender) return '请选择性别';
+    if (!formData.symptom_description.trim() || formData.symptom_description.trim().length < 2) {
+      return '请输入至少 2 个字符的症状描述';
+    }
+    return null;
+  }, [formData]);
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.age || !formData.gender) {
-      setError('请填写基本信息（姓名、年龄、性别）');
-      return;
-    }
-    if (!formData.symptom_description.trim()) {
-      setError('请填写症状描述');
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     setError('');
     setLoading(true);
+    setCurrentStep(0);
+    setResult(null);
+
     try {
       const { data } = await api.diagnose(formData);
       setResult(data);
-      // 滚动到结果区域
+      // 等 loading 动画结束再滚动
       setTimeout(() => {
         document.getElementById('result-panel')?.scrollIntoView({
           behavior: 'smooth',
           block: 'start',
         });
-      }, 150);
+      }, 300);
     } catch (err) {
       setError('诊断请求失败，请检查后端服务是否启动');
       console.error(err);
@@ -79,24 +109,42 @@ export default function DiagnosisPage() {
           onChange={(lab) => setFormData({ ...formData, lab_report: lab })}
         />
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && (
+          <div className="alert alert-error">
+            <span className="alert-icon">⚠️</span>
+            <span>{error}</span>
+          </div>
+        )}
 
         <button
-          className="btn btn-primary"
+          className={`btn btn-primary btn-lg ${loading ? 'btn-loading' : ''}`}
           onClick={handleSubmit}
           disabled={loading}
         >
-          {loading ? '⏳ 正在分析中...' : '🔍 开始智能诊断'}
+          {loading ? (
+            <>
+              <span className="spinner" />
+              <span>正在分析中...</span>
+            </>
+          ) : (
+            '🔍 开始智能诊断'
+          )}
         </button>
       </div>
 
       {/* ── 右栏：结果 ── */}
       <div className="right-panel" id="result-panel">
-        {result ? (
+        {loading ? (
+          <LoadingSkeleton steps={DIAGNOSIS_STEPS} currentStep={currentStep} />
+        ) : result ? (
           <>
             <DiagnosisResultCard result={result.diagnosis} />
             <SimilarCasesList cases={result.similar_cases} />
-            <button className="btn btn-outline" onClick={handleReset} style={{ width: '100%' }}>
+            <button
+              className="btn btn-outline"
+              onClick={handleReset}
+              style={{ width: '100%' }}
+            >
               🔄 重新诊断
             </button>
           </>

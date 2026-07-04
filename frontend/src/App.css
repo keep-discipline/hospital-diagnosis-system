@@ -775,6 +775,234 @@ textarea {
 .text-center { text-align: center; }
 .text-muted { color: var(--text-muted); font-size: 0.8rem; }
 
+/* ── Form Validation ─────────────────────────────── */
+.form-group.has-error input,
+.form-group.has-error select,
+.form-group.has-error textarea {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px var(--danger-light);
+}
+
+.required {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.field-error {
+  display: block;
+  color: var(--danger);
+  font-size: 0.78rem;
+  margin-top: 3px;
+}
+
+.field-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.char-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* ── Alert ───────────────────────────────────────── */
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.alert-error {
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid #FECACA;
+}
+
+.alert-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* ── Button Loading ──────────────────────────────── */
+.btn-lg {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 1.05rem;
+  border-radius: 0.6rem;
+}
+
+.btn-loading {
+  cursor: wait;
+  opacity: 0.85;
+}
+
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* ── Loading Steps ───────────────────────────────── */
+.loading-card {
+  padding: 2rem 1.5rem;
+}
+
+.loading-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin-bottom: 2rem;
+}
+
+.loading-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: opacity 0.3s;
+}
+
+.loading-step.pending {
+  opacity: 0.3;
+}
+
+.loading-step.done {
+  opacity: 0.7;
+}
+
+.loading-step-indicator {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+.loading-step.active .loading-step-indicator {
+  border: 2.5px solid var(--primary);
+  border-top-color: transparent;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-step.done .loading-step-indicator {
+  background: var(--success);
+}
+
+.step-check {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+.step-spinner {
+  display: none;
+}
+
+.step-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--border);
+  border-radius: 50%;
+}
+
+.loading-step.active .loading-step-indicator .step-dot {
+  display: none;
+}
+
+.loading-step-text {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.loading-step.active .loading-step-text {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ── Skeleton Screen ─────────────────────────────── */
+.skeleton-card {
+  background: var(--bg);
+  border-radius: 0.6rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.skeleton-line {
+  height: 14px;
+  background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.skeleton-title {
+  width: 40%;
+  height: 20px;
+  margin-bottom: 16px;
+}
+
+.skeleton-bar {
+  width: 90%;
+  height: 24px;
+}
+
+.skeleton-text {
+  width: 85%;
+  height: 12px;
+}
+
+.w-60 { width: 60% !important; }
+.w-80 { width: 80% !important; }
+
+/* ── Animations ───────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── OCR Status ───────────────────────────────────── */
+.ocr-status {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.ocr-status.processing {
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+
+.ocr-status.success {
+  background: var(--success-light);
+  color: #065F46;
+}
+
+.ocr-status.error {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
 /* ── Scrollbar ──────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
