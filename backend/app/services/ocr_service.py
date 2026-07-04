@@ -114,16 +114,13 @@ class OCRService:
         Returns:
             识别出的纯文本，每行一个文本块
         """
-        # 图片二进制 → base64
-        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-
         # 调用百度 OCR 精确版（支持中英文混合）
         options = {
             "language_type": "CHN_ENG",
             "detect_direction": "true",
             "paragraph": "true",
         }
-        result = self.baidu.accurateBasic(image_b64, options)
+        result = self.baidu.basicAccurate(image_bytes, options)
 
         # 检查错误
         if "error_code" in result:
