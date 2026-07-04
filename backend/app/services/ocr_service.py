@@ -18,10 +18,16 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# 21 项化验指标的 prompt 描述
-LAB_FIELDS_PROMPT = """你是一个专业的医学化验单数据提取助手。请从以下 OCR 识别出的文本中，提取化验指标数值。
+# OCR 结构化 Prompt（患者信息 + 21 项化验指标）
+LAB_FIELDS_PROMPT = """你是一个专业的医学化验单数据提取助手。请从以下 OCR 识别出的文本中，提取患者基本信息和化验指标数值。
 
-需要提取的 21 项指标（如果某项在文本中找不到，值设为 null）：
+## 一、患者基本信息
+从化验单顶部或标题区域提取：
+- name: 患者姓名（字符串，如 "张三"）
+- age: 年龄（整数，如 45）
+- gender: 性别（"male" 男 / "female" 女 / "other" 其他，从 "男/女/M/F" 等推断）
+
+## 二、化验指标（21 项，找不到的设为 null）
 - wbc: 白细胞计数 (×10⁹/L)，正常范围 4.0-10.0
 - neutrophil_pct: 中性粒细胞百分比 (%)，正常范围 50-70
 - lymphocyte_pct: 淋巴细胞百分比 (%)，正常范围 20-40
@@ -51,8 +57,8 @@ LAB_FIELDS_PROMPT = """你是一个专业的医学化验单数据提取助手。
 4. 如果文本中完全找不到某指标，值设为 null
 5. 只返回纯 JSON，不要包含任何其他文字
 
-请严格按以下 JSON 格式返回：
-{"lab_data": {"wbc": 数值或null, "neutrophil_pct": 数值或null, ...}}"""
+请严格按以下 JSON 格式返回（只返回 JSON，不要其他文字）：
+{"patient_info": {"name": "姓名或null", "age": 年龄或null, "gender": "male/female/other或null"}, "lab_data": {"wbc": 数值或null, "neutrophil_pct": 数值或null, ...}}"""
 
 
 class OCRService:
@@ -257,13 +263,29 @@ class OCRService:
         try:
             parsed = json.loads(content)
             lab_data = parsed.get("lab_data", {})
+            patient_info = parsed.get("patient_info", {})
 
             # 只保留数值类型
             cleaned = {}
             for key, val in lab_data.items():
                 if isinstance(val, (int, float)):
                     cleaned[key] = float(val)
-            return {"lab_data": cleaned}
+
+            # 清洗患者信息
+            info = {}
+            if isinstance(patient_info.get("name"), str) and patient_info["name"]:
+                info["name"] = patient_info["name"].strip()
+            if isinstance(patient_info.get("age"), (int, float)) and patient_info["age"]:
+                info["age"] = int(patient_info["age"])
+            raw_gender = patient_info.get("gender", "")
+            if raw_gender in ("male", "female", "other"):
+                info["gender"] = raw_gender
+            elif raw_gender in ("男", "M", "m"):
+                info["gender"] = "male"
+            elif raw_gender in ("女", "F", "f"):
+                info["gender"] = "female"
+
+            return {"lab_data": cleaned, "patient_info": info}
         except json.JSONDecodeError as e:
             logger.error(f"DeepSeek JSON 解析失败: {content[:200]}")
             raise RuntimeError(f"AI 结构化解析失败: {e}")

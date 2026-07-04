@@ -1,9 +1,16 @@
 import { useState, useRef } from 'react';
 import type { LabReport } from '../types/diagnosis';
 
+interface PatientInfo {
+  name?: string;
+  age?: number;
+  gender?: string;
+}
+
 interface Props {
   labData: LabReport;
   onChange: (data: LabReport) => void;
+  onPatientInfo?: (info: PatientInfo) => void;
 }
 
 // 21 项化验指标定义
@@ -61,7 +68,7 @@ const LAB_GROUPS = [
   },
 ];
 
-export default function LabReportForm({ labData, onChange }: Props) {
+export default function LabReportForm({ labData, onChange, onPatientInfo }: Props) {
   const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>({
     0: true, // 炎症指标默认展开
     1: true, // 生命体征默认展开
@@ -130,7 +137,8 @@ export default function LabReportForm({ labData, onChange }: Props) {
       }
 
       const result = await response.json();
-      // 用识别结果填充表单
+
+      // 自动填入化验数据
       const updated = { ...labData };
       for (const [key, value] of Object.entries(result.lab_data)) {
         if (key in updated) {
@@ -139,8 +147,15 @@ export default function LabReportForm({ labData, onChange }: Props) {
       }
       onChange(updated);
 
+      // 自动填入患者信息（姓名、年龄、性别）
+      if (result.patient_info && onPatientInfo) {
+        onPatientInfo(result.patient_info);
+      }
+
+      const labCount = Object.keys(result.lab_data).length;
+      const hasPatient = result.patient_info?.name ? ' + 患者信息' : '';
       setOcrStatus('success');
-      setOcrMessage(`识别成功！已填充 ${Object.keys(result.lab_data).length} 项指标`);
+      setOcrMessage(`识别成功！已填充 ${labCount} 项指标${hasPatient}`);
     } catch (err) {
       setOcrStatus('error');
       setOcrMessage(err instanceof Error ? err.message : '识别失败，请重试');

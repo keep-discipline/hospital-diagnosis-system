@@ -107,6 +107,14 @@ export default function DiagnosisPage() {
         <LabReportForm
           labData={formData.lab_report}
           onChange={(lab) => setFormData({ ...formData, lab_report: lab })}
+          onPatientInfo={(info) =>
+            setFormData((prev) => ({
+              ...prev,
+              name: info.name || prev.name,
+              age: info.age || prev.age,
+              gender: (info.gender as 'male' | 'female' | 'other') || prev.gender,
+            }))
+          }
         />
 
         {error && (
