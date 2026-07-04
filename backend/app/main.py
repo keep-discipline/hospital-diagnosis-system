@@ -1,8 +1,19 @@
 """FastAPI 应用入口"""
 
 import json
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+# 配置应用日志，确保 INFO 级别日志输出到控制台
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    datefmt="%H:%M:%S",
+)
+# 降低第三方库日志噪音
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
