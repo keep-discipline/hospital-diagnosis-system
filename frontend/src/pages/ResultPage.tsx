@@ -10,22 +10,30 @@ export default function ResultPage() {
 
   if (!data) {
     return (
-      <div className="empty-state">
-        <p>暂无诊断结果</p>
-        <button className="btn-link" onClick={() => navigate('/')}>
-          返回首页进行诊断
-        </button>
+      <div className="card">
+        <div className="empty-panel">
+          <div className="empty-panel-icon">📭</div>
+          <h3>暂无诊断结果</h3>
+          <p>请先填写诊断表单并提交</p>
+          <button className="btn btn-primary mt-2" onClick={() => navigate('/')}>
+            前往诊断页面
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <DiagnosisResultCard result={data.diagnosis} />
-      <SimilarCasesList cases={data.similar_cases} />
-      <button className="btn-submit" onClick={() => navigate('/')}>
-        🔄 重新诊断
-      </button>
+    <div className="diagnosis-layout">
+      <div className="left-panel">
+        <DiagnosisResultCard result={data.diagnosis} />
+      </div>
+      <div className="right-panel">
+        <SimilarCasesList cases={data.similar_cases} />
+        <button className="btn btn-primary" onClick={() => navigate('/')}>
+          🔄 重新诊断
+        </button>
+      </div>
     </div>
   );
 }

@@ -28,6 +28,10 @@ services:
       EMBEDDING_MODEL: shibing624/text2vec-base-chinese
       MODEL_PATH: /app/data/models/diagnosis_model.pt
       HF_ENDPOINT: https://hf-mirror.com
+      DEEPSEEK_API_KEY: PLACEHOLDER
+      BAIDU_OCR_APP_ID: "PLACEHOLDER_BAIDU_APP_ID"
+      BAIDU_OCR_API_KEY: PLACEHOLDER_BAIDU_API_KEY
+      BAIDU_OCR_SECRET_KEY: PLACEHOLDER_BAIDU_SECRET_KEY
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
       - backend_data:/app/data

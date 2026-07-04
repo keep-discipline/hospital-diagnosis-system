@@ -19,6 +19,7 @@
 | Embedding | 预训练中文模型（text2vec-base-chinese） | 症状描述 → 向量 |
 | RAG 检索 | pgvector 余弦相似度 | 检索相似病人案例 |
 | 诊断模型 | PyTorch 自建 MLP 网络 | 化验单数据 → 病症预测 |
+| OCR | 百度 OCR（主）+ EasyOCR（降级）+ DeepSeek | 化验单图片 → 结构化数据 |
 | 部署 | Docker + Docker Compose | 容器化一键启动 |
 
 ### 架构模式
@@ -48,7 +49,8 @@ hospital_system/
 │   │   ├── services/            # 业务逻辑层
 │   │   │   ├── rag_service.py   # RAG 检索 + Transformer embedding
 │   │   │   ├── diagnosis_service.py  # DL 模型推理
-│   │   │   └── patient_service.py    # 病人数据管理
+│   │   │   ├── patient_service.py    # 病人数据管理
+│   │   │   └── ocr_service.py   # 化验单 OCR 识别（百度 + EasyOCR）
 │   │   └── ml/                  # ML/DL 模型
 │   │       ├── embedding.py     # Transformer 文本向量化
 │   │       ├── diagnosis_model.py    # 诊断预测模型定义
@@ -88,6 +90,14 @@ hospital_system/
                                                         ▼
                                                ⑦ 合并结果返回前端
                                           （相似案例参考 + AI 预测诊断）
+
+另外，前端支持拍照/上传化验单图片，通过 POST /api/ocr 自动识别填入表单：
+
+化验单图片 ──▶ POST /api/ocr ──▶ 百度 OCR（主引擎）
+                                      │
+                                      ├── 成功 → DeepSeek 结构化 → 21 项数值
+                                      │
+                                      └── 失败 → EasyOCR（降级）→ DeepSeek 结构化
 ```
 
 两个通道**并行执行**，最终结果合并返回。
@@ -164,6 +174,7 @@ Input(30) → BatchNorm → Linear(128) → ReLU → Dropout(0.3)
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | POST | `/api/diagnose` | 核心接口：提交症状+化验单，返回诊断 |
+| POST | `/api/ocr` | 化验单图片上传，OCR 识别 + AI 结构化，返回 21 项指标 |
 | GET | `/api/patients/{id}` | 查询历史病人 |
 | GET | `/api/patients` | 病人列表（分页） |
 | GET | `/api/diseases` | 支持的疾病列表 |
@@ -215,13 +226,35 @@ Input(30) → BatchNorm → Linear(128) → ReLU → Dropout(0.3)
 
 ---
 
+### POST /api/ocr
+
+化验单图片上传识别，支持百度 OCR（云端精确版）和 EasyOCR（本地降级引擎）。
+
+**Request**: `multipart/form-data`，字段 `file`（JPG/PNG/WebP，最大 10MB）
+
+**Response**:
+```json
+{
+  "lab_data": {
+    "wbc": 12.5, "neutrophil_pct": 85, "crp": 45, "temperature": 38.6,
+    "...": "...其余 17 项指标"
+  },
+  "raw_text": "白细胞计数 12.5 ×10⁹/L 中性粒细胞百分比 85%..."
+}
+```
+
+**降级策略**：百度 OCR 调用失败时自动切换 EasyOCR，确保服务可用性。
+
+---
+
 ## 7. 前端页面
 
 ### 页面 1：诊断录入页（首页）
 
 - 基本信息表单（姓名、年龄、性别）
 - 症状描述文本区
-- 化验单数据录入区（可折叠展开）
+- 化验单数据录入区（可折叠展开，支持分组展示）
+- 拍照/上传化验单图片自动 OCR 识别填入
 - "开始诊断"提交按钮，调用 POST /api/diagnose
 
 ### 页面 2：诊断结果页
@@ -278,6 +311,6 @@ volumes:
 | **Docker** | 前后端 + 数据库容器化，docker-compose 编排 |
 | **FastAPI** | 异步 API 服务、Pydantic 数据校验、自动文档 |
 | **React + TS** | 前端表单、结果可视化、类型安全 |
-| **PostgreSQL + pgvector** | 结构化数据 + 向量检索一体化存储 |
+| **OCR 识别** | 百度 OCR（云端）+ EasyOCR（本地降级）+ DeepSeek 结构化解析 |
 ```
 

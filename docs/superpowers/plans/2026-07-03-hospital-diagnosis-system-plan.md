@@ -1,12 +1,12 @@
 # 智能医疗诊断辅助系统 — 实现计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 构建一个医院诊断辅助系统，病人输入化验单和症状描述，RAG 检索相似病例 + DL 模型预测病症，给出诊断建议。
 
-**Architecture:** 模块化分层 FastAPI 单体应用，React + TypeScript 前端，PostgreSQL + pgvector 存储，Docker Compose 编排。RAG 通道和诊断预测通道在 /api/diagnose 中并行执行后合并结果。
+**Architecture:** 模块化分层 FastAPI 单体应用，React + TypeScript 前端，PostgreSQL + pgvector 存储，Docker Compose 编排。RAG 通道和诊断预测通道在 /api/diagnose 中并行执行后合并结果。化验单支持图片上传 OCR 识别（百度 OCR 主引擎 + EasyOCR 降级 + DeepSeek 结构化）。
 
-**Tech Stack:** React 18 + TypeScript 5, FastAPI (Python 3.11), PostgreSQL 16 + pgvector, PyTorch 2.x, sentence-transformers, SQLAlchemy 2.x, Docker + Docker Compose
+**Tech Stack:** React 18 + TypeScript 5, FastAPI (Python 3.11), PostgreSQL 16 + pgvector, PyTorch 2.x, sentence-transformers, SQLAlchemy 2.x, 百度 OCR / EasyOCR, DeepSeek API, Docker + Docker Compose
 
 ## Global Constraints
 
@@ -17,6 +17,7 @@
 - 诊断模型为 MLP 结构：输入 20 维化验指标 → 输出 10 种疾病概率
 - 编码规范：英文变量名，注释用中文
 - 模拟数据：10 种疾病，500 条病例
+- OCR 引擎：百度 OCR 精确版（主）+ EasyOCR（降级）+ DeepSeek（结构化）
 
 ---
 
@@ -31,7 +32,7 @@
 - Consumes: nothing
 - Produces: `docker-compose.yml` 中定义的服务名 `db`, `backend`, `frontend` 供后续 Task 使用
 
-- [ ] **Step 1: 创建 .gitignore**
+- [x] **Step 1: 创建 .gitignore**
 
 ```bash
 cat > .gitignore << 'EOF'
@@ -48,7 +49,7 @@ data/models/*
 EOF
 ```
 
-- [ ] **Step 2: 创建 docker-compose.yml**
+- [x] **Step 2: 创建 docker-compose.yml**
 
 ```yaml
 version: "3.9"
@@ -94,19 +95,19 @@ volumes:
   pgdata:
 ```
 
-- [ ] **Step 3: 创建 models 目录占位文件**
+- [x] **Step 3: 创建 models 目录占位文件**
 
 ```bash
 mkdir -p data/models
 touch data/models/.gitkeep
 ```
 
-- [ ] **Step 4: 验证 docker-compose 语法**
+- [x] **Step 4: 验证 docker-compose 语法**
 
 Run: `docker compose config`
 Expected: 输出完整的 compose 配置，无错误
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .gitignore docker-compose.yml data/
@@ -130,7 +131,7 @@ git commit -m "feat: add project scaffolding with docker-compose"
 - Consumes: `DATABASE_URL` 环境变量
 - Produces: `Patient` SQLAlchemy model（`id`, `name`, `age`, `gender`, `symptom_description`, `diagnosis`, `treatment`, `lab_data`, `created_at`），`get_db()` 异步 session 生成器，`init_db()` 建表函数
 
-- [ ] **Step 1: 创建 data/init.sql**
+- [x] **Step 1: 创建 data/init.sql**
 
 ```sql
 -- 启用 pgvector 扩展
@@ -154,7 +155,7 @@ CREATE TABLE IF NOT EXISTS patients (
 -- CREATE INDEX ON patients USING ivfflat (symptom_embedding vector_cosine_ops) WITH (lists = 100);
 ```
 
-- [ ] **Step 2: 创建 backend/requirements.txt**
+- [x] **Step 2: 创建 backend/requirements.txt**
 
 ```
 fastapi==0.111.0
@@ -170,7 +171,7 @@ numpy==1.26.4
 python-multipart==0.0.9
 ```
 
-- [ ] **Step 3: 创建 backend/app/config.py**
+- [x] **Step 3: 创建 backend/app/config.py**
 
 ```python
 """应用配置"""
@@ -191,7 +192,7 @@ class Settings(BaseSettings):
 settings = Settings()
 ```
 
-- [ ] **Step 4: 创建 backend/app/database.py**
+- [x] **Step 4: 创建 backend/app/database.py**
 
 ```python
 """数据库连接管理"""
@@ -226,7 +227,7 @@ async def init_db():
         await conn.run_sync(Base.metadata.create_all)
 ```
 
-- [ ] **Step 5: 创建 backend/app/models/patient.py**
+- [x] **Step 5: 创建 backend/app/models/patient.py**
 
 ```python
 """病人数据库模型"""
@@ -261,12 +262,12 @@ class Patient(Base):
         return f"<Patient(id={self.id}, name='{self.name}', diagnosis='{self.diagnosis}')>"
 ```
 
-- [ ] **Step 6: 验证导入**
+- [x] **Step 6: 验证导入**
 
 Run: `cd backend && python -c "from app.models.patient import Patient; print('Patient model OK:', Patient.__tablename__)"`
 Expected: `Patient model OK: patients`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add data/init.sql backend/requirements.txt backend/app/
@@ -285,7 +286,7 @@ git commit -m "feat: add database config, SQLAlchemy models, and init SQL"
 - Consumes: `Patient` model (字段名: `id`, `name`, `age`, `gender`, `symptom_description`, `diagnosis`, `treatment`, `lab_data`, `symptom_embedding`)
 - Produces: `DiagnoseRequest`（`name: str`, `age: int`, `gender: str`, `symptom_description: str`, `lab_report: dict`），`DiagnosisItem`，`DiagnosisResult`，`SimilarCase`，`DiagnoseResponse`
 
-- [ ] **Step 1: 创建 backend/app/schemas/diagnosis.py**
+- [x] **Step 1: 创建 backend/app/schemas/diagnosis.py**
 
 ```python
 """诊断相关 Pydantic schemas"""
@@ -378,12 +379,12 @@ class PatientDetail(PatientSummary):
     lab_data: Optional[dict] = None
 ```
 
-- [ ] **Step 2: 验证 schema 导入**
+- [x] **Step 2: 验证 schema 导入**
 
 Run: `cd backend && python -c "from app.schemas.diagnosis import DiagnoseRequest, DiagnoseResponse, LabReport; print('Schemas OK')"`
 Expected: `Schemas OK`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add backend/app/schemas/
@@ -402,7 +403,7 @@ git commit -m "feat: add Pydantic request/response schemas"
 - Consumes: `settings.embedding_model`（默认 `shibing624/text2vec-base-chinese`）
 - Produces: `EmbeddingModel` 类，方法 `encode(text: str) -> list[float]`（768 维），`encode_batch(texts: list[str]) -> list[list[float]]`
 
-- [ ] **Step 1: 创建 backend/app/ml/embedding.py**
+- [x] **Step 1: 创建 backend/app/ml/embedding.py**
 
 ```python
 """Transformer 文本向量化模块"""
@@ -434,12 +435,12 @@ class EmbeddingModel:
 embedding_model = EmbeddingModel()
 ```
 
-- [ ] **Step 2: 验证 embedding 模型首次加载（会下载模型，约 400MB）**
+- [x] **Step 2: 验证 embedding 模型首次加载（会下载模型，约 400MB）**
 
 Run: `cd backend && python -c "from app.ml.embedding import embedding_model; v = embedding_model.encode('头痛发烧咳嗽'); print(f'Vector dim: {len(v)}, first 5: {v[:5]}')"`
 Expected: `Vector dim: 768, first 5: [0.xxx, ...]`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add backend/app/ml/__init__.py backend/app/ml/embedding.py
@@ -458,7 +459,7 @@ git commit -m "feat: add Transformer embedding module with text2vec-base-chinese
 - Produces: `DiagnosisPredictor(nn.Module)`，构造函数参数 `input_dim=20, num_diseases=10`；
   方法 `forward(x) -> Tensor` 返回 softmax 概率；`DISEASE_LABELS` 常量列表；`LAB_FEATURE_NAMES` 常量列表
 
-- [ ] **Step 1: 创建 backend/app/ml/diagnosis_model.py**
+- [x] **Step 1: 创建 backend/app/ml/diagnosis_model.py**
 
 ```python
 """诊断预测深度学习模型（MLP）"""
@@ -527,12 +528,12 @@ def create_model(model_path: str | None = None) -> DiagnosisPredictor:
     return model
 ```
 
-- [ ] **Step 2: 验证模型结构**
+- [x] **Step 2: 验证模型结构**
 
 Run: `cd backend && python -c "from app.ml.diagnosis_model import DiagnosisPredictor, DISEASE_LABELS; m = DiagnosisPredictor(); x = m(torch.randn(2, 20)); print(f'Input: (2,20) → Output: {x.shape}, sum~1: {x.sum(dim=-1).tolist()}')"`
 Expected: `Input: (2,20) → Output: torch.Size([2, 10]), sum~1: [1.0, 1.0]`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add backend/app/ml/diagnosis_model.py
@@ -552,7 +553,7 @@ git commit -m "feat: add MLP diagnosis prediction model definition"
 - Consumes: `DISEASE_LABELS`, `LAB_FEATURE_NAMES` 来自 `diagnosis_model.py`；`EmbeddingModel.encode_batch()` 来自 `embedding.py`；`Patient` model；`settings.database_url`
 - Produces: `generate_mock_data(n: int) -> list[dict]`；`train_model()` 函数；`data/models/diagnosis_model.pt` 训练好的权重文件
 
-- [ ] **Step 1: 创建 backend/app/ml/data_generator.py**
+- [x] **Step 1: 创建 backend/app/ml/data_generator.py**
 
 ```python
 """模拟医疗数据生成器
@@ -728,7 +729,7 @@ def generate_mock_data(n_per_disease: int = 50) -> list[dict]:
     return patients
 ```
 
-- [ ] **Step 2: 创建 backend/app/ml/train.py**
+- [x] **Step 2: 创建 backend/app/ml/train.py**
 
 ```python
 """诊断模型训练脚本"""
@@ -815,12 +816,12 @@ if __name__ == "__main__":
     train()
 ```
 
-- [ ] **Step 3: 运行训练脚本**
+- [x] **Step 3: 运行训练脚本**
 
 Run: `cd backend && python -m app.ml.train`
 Expected: 训练过程输出，最终 `Val Acc` > 0.8（模拟数据容易拟合），生成 `data/models/diagnosis_model.pt` 和 `data/mock_patients.json`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add backend/app/ml/data_generator.py backend/app/ml/train.py data/mock_patients.json data/models/.gitkeep
@@ -840,7 +841,7 @@ git commit -m "feat: add mock data generator and model training script"
 - Consumes: `embedding_model.encode()` from Task 4；`Patient` model from Task 2；`async_session` from Task 2
 - Produces: `search_similar_patients(db, symptom_text, top_k) -> list[dict]`；`create_patient(db, data) -> Patient`；`get_patient(db, id) -> Patient`；`get_all_patients(db, skip, limit) -> list[Patient]`
 
-- [ ] **Step 1: 创建 backend/app/services/rag_service.py**
+- [x] **Step 1: 创建 backend/app/services/rag_service.py**
 
 ```python
 """RAG 检索服务：症状描述 → embedding → pgvector 相似度检索"""
@@ -922,7 +923,7 @@ async def generate_embedding_for_patient(
     await db.commit()
 ```
 
-- [ ] **Step 2: 创建 backend/app/services/patient_service.py**
+- [x] **Step 2: 创建 backend/app/services/patient_service.py**
 
 ```python
 """病人数据管理服务"""
@@ -1009,12 +1010,12 @@ async def import_mock_patients(
     return count
 ```
 
-- [ ] **Step 3: 验证导入**
+- [x] **Step 3: 验证导入**
 
 Run: `cd backend && python -c "from app.services.rag_service import search_similar_patients; from app.services.patient_service import create_patient, get_patient; print('Services OK')"`
 Expected: `Services OK`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add backend/app/services/
@@ -1032,7 +1033,7 @@ git commit -m "feat: add RAG search service and patient CRUD service"
 - Consumes: `DiagnosisPredictor` from Task 5 (`forward(x)` 返回 `Tensor([N, 10])`)；`DISEASE_LABELS` from Task 5；`TREATMENTS` from Task 6
 - Produces: `predict_diagnosis(lab_data: dict) -> dict` 返回 `{"top_prediction", "confidence", "top3": [...], "treatment_suggestion"}`
 
-- [ ] **Step 1: 创建 backend/app/services/diagnosis_service.py**
+- [x] **Step 1: 创建 backend/app/services/diagnosis_service.py**
 
 ```python
 """诊断预测推理服务"""
@@ -1123,12 +1124,12 @@ class DiagnosisService:
 diagnosis_service = DiagnosisService()
 ```
 
-- [ ] **Step 2: 验证推理服务（需要先完成 Task 6 训练）**
+- [x] **Step 2: 验证推理服务（需要先完成 Task 6 训练）**
 
 Run: `cd backend && python -c "from app.services.diagnosis_service import diagnosis_service; from app.ml.data_generator import generate_mock_data; p = generate_mock_data(1)[0]; r = diagnosis_service.predict(p['lab_data']); print(f'Prediction: {r[\"top_prediction\"]} ({r[\"confidence\"]:.2%})')"`
 Expected: 输出预测疾病名和置信度
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add backend/app/services/diagnosis_service.py
@@ -1151,7 +1152,7 @@ git commit -m "feat: add diagnosis prediction inference service"
 - Consumes: `diagnosis_service.predict()` from Task 8；`search_similar_patients()` from Task 7；`patient_service` from Task 7；`DiagnoseRequest`, `DiagnoseResponse`, `PatientSummary`, `PatientDetail`, `DiseaseInfo` from Task 3；`get_db()` from Task 2
 - Produces: FastAPI app on port 8000, routes: `GET /api/health`, `GET /api/patients`, `GET /api/patients/{id}`, `GET /api/diseases`, `POST /api/diagnose`
 
-- [ ] **Step 1: 创建 backend/app/api/health.py**
+- [x] **Step 1: 创建 backend/app/api/health.py**
 
 ```python
 """健康检查接口"""
@@ -1166,7 +1167,7 @@ async def health_check():
     return {"status": "ok", "service": "hospital-diagnosis-system"}
 ```
 
-- [ ] **Step 2: 创建 backend/app/api/patients.py**
+- [x] **Step 2: 创建 backend/app/api/patients.py**
 
 ```python
 """病人查询接口"""
@@ -1221,7 +1222,7 @@ async def get_patient(patient_id: int, db: AsyncSession = Depends(get_db)):
     )
 ```
 
-- [ ] **Step 3: 创建 backend/app/api/diagnosis.py**
+- [x] **Step 3: 创建 backend/app/api/diagnosis.py**
 
 ```python
 """诊断核心接口"""
@@ -1313,7 +1314,7 @@ async def list_diseases():
     ]
 ```
 
-- [ ] **Step 4: 创建 backend/app/api/router.py**
+- [x] **Step 4: 创建 backend/app/api/router.py**
 
 ```python
 """API 路由聚合"""
@@ -1330,7 +1331,7 @@ api_router.include_router(patients_router)
 api_router.include_router(diagnosis_router)
 ```
 
-- [ ] **Step 5: 创建 backend/app/main.py**
+- [x] **Step 5: 创建 backend/app/main.py**
 
 ```python
 """FastAPI 应用入口"""
@@ -1370,7 +1371,7 @@ app.add_middleware(
 app.include_router(api_router)
 ```
 
-- [ ] **Step 6: 在 backend/app/services/__init__.py 中添加导入**
+- [x] **Step 6: 在 backend/app/services/__init__.py 中添加导入**
 
 ```python
 from app.services import rag_service, patient_service, diagnosis_service
@@ -1378,13 +1379,13 @@ from app.services import rag_service, patient_service, diagnosis_service
 
 (确认 `backend/app/services/__init__.py` 文件已存在并包含以上内容)
 
-- [ ] **Step 7: 启动后端验证 API**
+- [x] **Step 7: 启动后端验证 API**
 
 Run: `cd backend && uvicorn app.main:app --reload --port 8000`
 Open `http://localhost:8000/docs` 查看 Swagger 文档
 Expected: 看到 5 个 API 接口（health, patients list, patient detail, diagnose, diseases）
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add backend/app/api/ backend/app/main.py backend/app/services/__init__.py
@@ -1410,7 +1411,7 @@ git commit -m "feat: add API endpoints (health, patients, diagnose, diseases) an
 - Consumes: nothing
 - Produces: React 18 + TypeScript + Vite 项目框架，`App` 组件
 
-- [ ] **Step 1: 创建 frontend/package.json**
+- [x] **Step 1: 创建 frontend/package.json**
 
 ```json
 {
@@ -1439,7 +1440,7 @@ git commit -m "feat: add API endpoints (health, patients, diagnose, diseases) an
 }
 ```
 
-- [ ] **Step 2: 创建 frontend/vite.config.ts**
+- [x] **Step 2: 创建 frontend/vite.config.ts**
 
 ```typescript
 import { defineConfig } from 'vite'
@@ -1459,7 +1460,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 3: 创建 frontend/tsconfig.json**
+- [x] **Step 3: 创建 frontend/tsconfig.json**
 
 ```json
 {
@@ -1485,7 +1486,7 @@ export default defineConfig({
 }
 ```
 
-- [ ] **Step 4: 创建 frontend/tsconfig.node.json**
+- [x] **Step 4: 创建 frontend/tsconfig.node.json**
 
 ```json
 {
@@ -1500,7 +1501,7 @@ export default defineConfig({
 }
 ```
 
-- [ ] **Step 5: 创建 frontend/index.html**
+- [x] **Step 5: 创建 frontend/index.html**
 
 ```html
 <!DOCTYPE html>
@@ -1518,7 +1519,7 @@ export default defineConfig({
 </html>
 ```
 
-- [ ] **Step 6: 创建 frontend/src/main.tsx**
+- [x] **Step 6: 创建 frontend/src/main.tsx**
 
 ```tsx
 import React from 'react'
@@ -1533,7 +1534,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 )
 ```
 
-- [ ] **Step 7: 创建 frontend/src/App.tsx**
+- [x] **Step 7: 创建 frontend/src/App.tsx**
 
 ```tsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
@@ -1561,7 +1562,7 @@ function App() {
 export default App
 ```
 
-- [ ] **Step 8: 创建 frontend/src/App.css**
+- [x] **Step 8: 创建 frontend/src/App.css**
 
 ```css
 * {
@@ -1600,18 +1601,18 @@ body {
 }
 ```
 
-- [ ] **Step 9: 创建 frontend/src/vite-env.d.ts**
+- [x] **Step 9: 创建 frontend/src/vite-env.d.ts**
 
 ```typescript
 /// <reference types="vite/client" />
 ```
 
-- [ ] **Step 10: 安装依赖并验证**
+- [x] **Step 10: 安装依赖并验证**
 
 Run: `cd frontend && npm install && npm run dev`
 Expected: Vite 启动成功，打开 `http://localhost:3000` 看到标题 "🏥 智能医疗诊断辅助系统"
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add frontend/
@@ -1630,7 +1631,7 @@ git commit -m "feat: scaffold React + TypeScript + Vite frontend project"
 - Consumes: `DiagnoseResponse` schema 结构（参考 Task 3）
 - Produces: TypeScript 类型 `LabReport`, `DiagnoseRequest`, `DiagnoseResponse`, `DiagnosisItem`, `DiagnosisResult`, `SimilarCase`；`api.diagnose(req)`, `api.getPatients()`, `api.getPatient(id)`, `api.getDiseases()`
 
-- [ ] **Step 1: 创建 frontend/src/types/diagnosis.ts**
+- [x] **Step 1: 创建 frontend/src/types/diagnosis.ts**
 
 ```typescript
 // ── Request types ──────────────────────────────
@@ -1715,7 +1716,7 @@ export interface PatientDetail extends PatientSummary {
 }
 ```
 
-- [ ] **Step 2: 创建 frontend/src/services/api.ts**
+- [x] **Step 2: 创建 frontend/src/services/api.ts**
 
 ```typescript
 import axios from 'axios';
@@ -1761,12 +1762,12 @@ export const api = {
 };
 ```
 
-- [ ] **Step 3: 验证编译**
+- [x] **Step 3: 验证编译**
 
 Run: `cd frontend && npx tsc --noEmit`
 Expected: 无错误
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/src/types/ frontend/src/services/
@@ -1789,7 +1790,7 @@ git commit -m "feat: add TypeScript type definitions and API service layer"
 - Consumes: `api` from Task 11；types from Task 11；路由 `/` 和 `/result`
 - Produces: 完整的诊断录入页面和结果展示页面
 
-- [ ] **Step 1: 创建 frontend/src/components/PatientForm.tsx**
+- [x] **Step 1: 创建 frontend/src/components/PatientForm.tsx**
 
 ```tsx
 import type { DiagnoseRequest } from '../types/diagnosis';
@@ -1856,83 +1857,11 @@ export default function PatientForm({ formData, onChange }: Props) {
 }
 ```
 
-- [ ] **Step 2: 创建 frontend/src/components/LabReportForm.tsx**
+- [x] **Step 2: 创建 frontend/src/components/LabReportForm.tsx**（含 OCR 图片上传）
 
-```tsx
-import { useState } from 'react';
-import type { LabReport } from '../types/diagnosis';
+Component includes: 4 collapsible lab groups (炎症指标, 生命体征, 血常规, 生化指标), image upload area with drag/drop, OCR button calling `POST /api/ocr`, auto-fill form fields from OCR result.
 
-interface Props {
-  labData: LabReport;
-  onChange: (data: LabReport) => void;
-}
-
-const FIELDS: { key: keyof LabReport; label: string; unit: string }[] = [
-  { key: 'wbc', label: '白细胞计数', unit: '×10⁹/L' },
-  { key: 'neutrophil_pct', label: '中性粒细胞百分比', unit: '%' },
-  { key: 'lymphocyte_pct', label: '淋巴细胞百分比', unit: '%' },
-  { key: 'crp', label: 'C反应蛋白', unit: 'mg/L' },
-  { key: 'temperature', label: '体温', unit: '°C' },
-  { key: 'systolic_bp', label: '收缩压', unit: 'mmHg' },
-  { key: 'diastolic_bp', label: '舒张压', unit: 'mmHg' },
-  { key: 'heart_rate', label: '心率', unit: '次/分' },
-  { key: 'respiratory_rate', label: '呼吸频率', unit: '次/分' },
-  { key: 'spo2', label: '血氧饱和度', unit: '%' },
-  { key: 'rbc', label: '红细胞计数', unit: '×10¹²/L' },
-  { key: 'hemoglobin', label: '血红蛋白', unit: 'g/L' },
-  { key: 'hematocrit', label: '血细胞比容', unit: '%' },
-  { key: 'platelet', label: '血小板计数', unit: '×10⁹/L' },
-  { key: 'glucose', label: '空腹血糖', unit: 'mmol/L' },
-  { key: 'creatinine', label: '肌酐', unit: 'μmol/L' },
-  { key: 'bun', label: '尿素氮', unit: 'mmol/L' },
-  { key: 'alt', label: '谷丙转氨酶', unit: 'U/L' },
-  { key: 'ast', label: '谷草转氨酶', unit: 'U/L' },
-  { key: 'total_cholesterol', label: '总胆固醇', unit: 'mmol/L' },
-  { key: 'triglycerides', label: '甘油三酯', unit: 'mmol/L' },
-];
-
-export default function LabReportForm({ labData, onChange }: Props) {
-  const [expanded, setExpanded] = useState(false);
-
-  const updateField = (key: keyof LabReport, value: string) => {
-    onChange({ ...labData, [key]: parseFloat(value) || 0 });
-  };
-
-  const visibleFields = expanded ? FIELDS : FIELDS.slice(0, 8);
-
-  return (
-    <section className="form-section">
-      <h2>🔬 化验单数据</h2>
-      <div className="lab-grid">
-        {visibleFields.map(({ key, label, unit }) => (
-          <label key={key}>
-            {label}
-            <div className="input-with-unit">
-              <input
-                type="number"
-                step="any"
-                value={labData[key] || ''}
-                onChange={(e) => updateField(key, e.target.value)}
-                placeholder="0"
-              />
-              <span className="unit">{unit}</span>
-            </div>
-          </label>
-        ))}
-      </div>
-      <button
-        type="button"
-        className="btn-link"
-        onClick={() => setExpanded(!expanded)}
-      >
-        {expanded ? '▲ 收起' : '▼ 展开全部指标'}
-      </button>
-    </section>
-  );
-}
-```
-
-- [ ] **Step 3: 创建 frontend/src/components/DiagnosisResult.tsx**
+- [x] **Step 3: 创建 frontend/src/components/DiagnosisResult.tsx**
 
 ```tsx
 import type { DiagnosisResult as DiagnosisResultType } from '../types/diagnosis';
@@ -1992,7 +1921,7 @@ export default function DiagnosisResultCard({ result }: Props) {
 }
 ```
 
-- [ ] **Step 4: 创建 frontend/src/components/SimilarCases.tsx**
+- [x] **Step 4: 创建 frontend/src/components/SimilarCases.tsx**
 
 ```tsx
 import type { SimilarCase } from '../types/diagnosis';
@@ -2031,414 +1960,29 @@ export default function SimilarCasesList({ cases }: Props) {
 }
 ```
 
-- [ ] **Step 5: 创建 frontend/src/pages/DiagnosisPage.tsx**
+- [x] **Step 5: 创建 frontend/src/pages/DiagnosisPage.tsx**（左-右两栏布局，含 OCR）
 
-```tsx
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import PatientForm from '../components/PatientForm';
-import LabReportForm from '../components/LabReportForm';
-import { api } from '../services/api';
-import type { DiagnoseRequest, LabReport, DiagnoseResponse } from '../types/diagnosis';
+Left panel: PatientForm + LabReportForm (with OCR upload) + Submit button
+Right panel: Results (DiagnosisResultCard + SimilarCasesList) or empty state
+Results shown inline (no page navigation).
 
-const EMPTY_LAB: LabReport = {
-  wbc: 0, neutrophil_pct: 0, lymphocyte_pct: 0, crp: 0,
-  temperature: 36.8, systolic_bp: 120, diastolic_bp: 80,
-  heart_rate: 72, respiratory_rate: 16, spo2: 98, rbc: 0,
-  hemoglobin: 0, hematocrit: 0, platelet: 0, glucose: 0,
-  creatinine: 0, bun: 0, alt: 0, ast: 0,
-  total_cholesterol: 0, triglycerides: 0,
-};
+- [x] **Step 6: 创建 frontend/src/pages/ResultPage.tsx**（独立结果页，兼容旧链接）
 
-const EMPTY_FORM: DiagnoseRequest = {
-  name: '',
-  age: 0,
-  gender: '',
-  symptom_description: '',
-  lab_report: EMPTY_LAB,
-};
+- [x] **Step 7: 添加组件样式到 App.css**（完整医疗主题 CSS）
 
-export default function DiagnosisPage() {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState<DiagnoseRequest>(EMPTY_FORM);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async () => {
-    // 简单校验
-    if (!formData.name || !formData.age || !formData.gender) {
-      setError('请填写基本信息（姓名、年龄、性别）');
-      return;
-    }
-    if (!formData.symptom_description.trim()) {
-      setError('请填写症状描述');
-      return;
-    }
-
-    setError('');
-    setLoading(true);
-    try {
-      const { data } = await api.diagnose(formData);
-      navigate('/result', { state: data as DiagnoseResponse });
-    } catch (err) {
-      setError('诊断请求失败，请检查后端服务是否启动');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div>
-      <PatientForm
-        formData={formData}
-        onChange={(data) => setFormData(data as DiagnoseRequest)}
-      />
-      <LabReportForm
-        labData={formData.lab_report}
-        onChange={(lab) => setFormData({ ...formData, lab_report: lab })}
-      />
-
-      {error && <div className="error-message">{error}</div>}
-
-      <button
-        className="btn-submit"
-        onClick={handleSubmit}
-        disabled={loading}
-      >
-        {loading ? '⏳ 正在分析中...' : '🔍 开始诊断'}
-      </button>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 6: 创建 frontend/src/pages/ResultPage.tsx**
-
-```tsx
-import { useLocation, useNavigate } from 'react-router-dom';
-import DiagnosisResultCard from '../components/DiagnosisResult';
-import SimilarCasesList from '../components/SimilarCases';
-import type { DiagnoseResponse } from '../types/diagnosis';
-
-export default function ResultPage() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const data = location.state as DiagnoseResponse | undefined;
-
-  if (!data) {
-    return (
-      <div className="empty-state">
-        <p>暂无诊断结果</p>
-        <button className="btn-link" onClick={() => navigate('/')}>
-          返回首页进行诊断
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <DiagnosisResultCard result={data.diagnosis} />
-      <SimilarCasesList cases={data.similar_cases} />
-      <button className="btn-submit" onClick={() => navigate('/')}>
-        🔄 重新诊断
-      </button>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 7: 添加组件样式到 App.css**
-
-在 `frontend/src/App.css` 末尾追加：
-
-```css
-/* ── Form Styles ─────────────────────────────── */
-
-.form-section {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-}
-
-.form-section h2 {
-  font-size: 1.15rem;
-  margin-bottom: 1rem;
-  color: #1e40af;
-}
-
-.form-row {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-row label {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  font-size: 0.875rem;
-  color: #4a5568;
-}
-
-.form-field-full {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.875rem;
-  color: #4a5568;
-}
-
-input, select, textarea {
-  margin-top: 0.25rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  transition: border-color 0.2s;
-}
-
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-}
-
-/* ── Lab Grid ─────────────────────────────────── */
-
-.lab-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.75rem;
-}
-
-.lab-grid label {
-  font-size: 0.8rem;
-  color: #4a5568;
-}
-
-.input-with-unit {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.input-with-unit input {
-  flex: 1;
-}
-
-.unit {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  white-space: nowrap;
-}
-
-/* ── Buttons ─────────────────────────────────── */
-
-.btn-submit {
-  display: block;
-  width: 100%;
-  padding: 0.875rem;
-  background: linear-gradient(135deg, #1a56db, #1e40af);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
-}
-
-.btn-submit:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.btn-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-link {
-  background: none;
-  border: none;
-  color: #3b82f6;
-  cursor: pointer;
-  font-size: 0.875rem;
-  padding: 0.5rem 0;
-  margin-top: 0.5rem;
-}
-
-/* ── Error ─────────────────────────────────── */
-
-.error-message {
-  background: #fef2f2;
-  color: #dc2626;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
-/* ── Result Card ──────────────────────────────── */
-
-.primary-diagnosis {
-  text-align: center;
-  padding: 1.5rem 0;
-}
-
-.disease-label {
-  display: block;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1e40af;
-}
-
-.confidence {
-  display: inline-block;
-  margin-top: 0.5rem;
-  padding: 0.25rem 1rem;
-  background: #dbeafe;
-  color: #1e40af;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.top3-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.top3-item {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.risk-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.disease-name {
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-.probability {
-  font-size: 0.9rem;
-  color: #6b7280;
-  min-width: 3.5rem;
-  text-align: right;
-}
-
-.prob-bar {
-  grid-column: 1 / -1;
-  height: 6px;
-  background: #e5e7eb;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.prob-bar-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.5s ease;
-}
-
-/* ── Treatment Box ─────────────────────────── */
-
-.treatment-box {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 8px;
-}
-
-.treatment-box h3 {
-  font-size: 0.95rem;
-  margin-bottom: 0.5rem;
-  color: #166534;
-}
-
-.treatment-box p {
-  font-size: 0.9rem;
-  color: #14532d;
-  line-height: 1.6;
-}
-
-/* ── Similar Cases ─────────────────────────── */
-
-.similar-case-item {
-  padding: 1rem;
-  margin-bottom: 0.75rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-}
-
-.similar-case-item:last-child {
-  margin-bottom: 0;
-}
-
-.case-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-
-.similarity-badge {
-  padding: 0.15rem 0.6rem;
-  background: #dbeafe;
-  color: #1e40af;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.case-diagnosis {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.case-symptoms, .case-treatment {
-  font-size: 0.85rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-  line-height: 1.5;
-}
-
-/* ── Empty State ──────────────────────────── */
-
-.empty-state, .empty-hint {
-  text-align: center;
-  padding: 2rem;
-  color: #9ca3af;
-}
-```
-
-- [ ] **Step 8: 验证前端页面**
+- [x] **Step 8: 验证前端页面**
 
 Run: `cd frontend && npx tsc --noEmit`
 Expected: 无 TypeScript 错误
 
 Start: `cd frontend && npm run dev`
-Open `http://localhost:3000` — 应看到完整的诊断录入表单
+Open `http://localhost:3000` — 应看到完整的诊断录入表单含 OCR 上传区
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add frontend/src/components/ frontend/src/pages/ frontend/src/App.css
-git commit -m "feat: add patient form, lab report form, diagnosis result, and similar cases components"
+git commit -m "feat: add patient form, lab report form with OCR, diagnosis result, and similar cases components"
 ```
 
 ---
@@ -2455,133 +1999,35 @@ git commit -m "feat: add patient form, lab report form, diagnosis result, and si
 - Consumes: `docker-compose.yml` 中定义的服务配置
 - Produces: 可一键 `docker compose up --build` 启动的完整系统
 
-- [ ] **Step 1: 创建 backend/Dockerfile**
+- [x] **Step 1: 创建 backend/Dockerfile**（含 EasyOCR 系统依赖和 apt/pip 镜像源）
 
-```dockerfile
-FROM python:3.11-slim
+- [x] **Step 2: 创建 frontend/Dockerfile**（Node.js 构建 + Nginx 部署）
 
-WORKDIR /app
+- [x] **Step 3: 创建 frontend/nginx.conf**（API 代理到 backend:8000）
 
-# 安装系统依赖
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+- [x] **Step 4: 添加应用启动时自动导入模拟数据的 lifespan 逻辑**
 
-# 安装 Python 依赖
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+- [x] **Step 5: 更新 docker-compose.yml 添加 OCR 环境变量**
 
-# 复制应用代码
-COPY . .
-
-# 创建模型目录
-RUN mkdir -p /app/data/models
-
-# 暴露端口
-EXPOSE 8000
-
-# 启动命令
-CMD ["sh", "-c", "python -m app.ml.train && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+```yaml
+environment:
+  DEEPSEEK_API_KEY: sk-xxx
+  BAIDU_OCR_APP_ID: "xxx"
+  BAIDU_OCR_API_KEY: xxx
+  BAIDU_OCR_SECRET_KEY: xxx
+  HF_ENDPOINT: https://hf-mirror.com
 ```
 
-- [ ] **Step 2: 创建 frontend/Dockerfile**
-
-```dockerfile
-FROM node:20-slim AS build
-
-WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 3000
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-- [ ] **Step 3: 创建 frontend/nginx.conf**
-
-```nginx
-server {
-    listen 3000;
-    server_name localhost;
-
-    location / {
-        root /usr/share/nginx/html;
-        index index.html;
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api/ {
-        proxy_pass http://backend:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-- [ ] **Step 4: 添加数据导入脚本到 init.sql**
-
-在 `data/init.sql` 末尾追加向量索引创建：
-
-```sql
--- 在表有足够数据后创建向量索引
--- 该索引由应用层在导入数据后触发创建
-```
-
-- [ ] **Step 5: 创建 app 启动时的数据导入逻辑**
-
-修改 `backend/app/main.py` 的 `lifespan` 函数，在启动时导入模拟数据：
-
-```python
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """应用启动/关闭时的生命周期事件"""
-    await init_db()
-    # 如果数据库为空，自动导入模拟数据
-    import json
-    from pathlib import Path
-    from app.services.patient_service import import_mock_patients
-    from app.database import async_session
-
-    mock_file = Path("data/mock_patients.json")
-    if mock_file.exists():
-        async with async_session() as db:
-            from sqlalchemy import text
-            result = await db.execute(text("SELECT COUNT(*) FROM patients"))
-            count = result.scalar()
-            if count == 0:
-                with open(mock_file, "r", encoding="utf-8") as f:
-                    patients_data = json.load(f)
-                n = await import_mock_patients(db, patients_data)
-                print(f"已导入 {n} 条模拟病例数据")
-    yield
-```
-
-- [ ] **Step 6: 创建 .env 文件（本地开发用）**
-
-```env
-DATABASE_URL=postgresql+asyncpg://hospital:hospital@localhost:5432/hospital
-EMBEDDING_MODEL=shibing624/text2vec-base-chinese
-MODEL_PATH=data/models/diagnosis_model.pt
-```
-
-- [ ] **Step 7: 启动完整服务进行验证**
+- [x] **Step 6: 启动完整服务进行验证**
 
 Run: `docker compose up --build`
-Expected: 三个服务启动成功
-- `http://localhost:8000/docs` 可见 API 文档
-- `http://localhost:3000` 可见前端页面
-- 可填写表单并提交诊断，获得结果
+Expected: 三个服务启动成功，OCR 端点可用
 
-- [ ] **Step 8: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
-git add backend/Dockerfile frontend/Dockerfile frontend/nginx.conf backend/app/main.py data/init.sql .env
-git commit -m "feat: add Dockerfiles, nginx config, and auto data seeding"
+git add backend/Dockerfile frontend/Dockerfile frontend/nginx.conf backend/app/main.py docker-compose.yml
+git commit -m "feat: add Dockerfiles, nginx config, OCR env vars, and auto data seeding"
 ```
 
 ---
@@ -2596,77 +2042,17 @@ git commit -m "feat: add Dockerfiles, nginx config, and auto data seeding"
 - Consumes: 完整运行的后端服务
 - Produces: 验证报告
 
-- [ ] **Step 1: 创建 backend/tests/test_diagnosis.py**
+- [x] **Step 1: 创建 backend/tests/test_diagnosis.py**（3 个测试：health / diseases / diagnose）
 
-```python
-"""端到端测试：验证诊断流程"""
-
-import pytest
-from httpx import AsyncClient, ASGITransport
-from app.main import app
-
-
-@pytest.mark.asyncio
-async def test_health_check():
-    """测试健康检查接口"""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        resp = await client.get("/api/health")
-        assert resp.status_code == 200
-        assert resp.json()["status"] == "ok"
-
-
-@pytest.mark.asyncio
-async def test_diseases_list():
-    """测试疾病列表接口"""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        resp = await client.get("/api/diseases")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert len(data) == 10
-        assert data[0]["name"] == "细菌性肺炎"
-
-
-@pytest.mark.asyncio
-async def test_diagnose():
-    """测试诊断接口（需要先完成模型训练）"""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        payload = {
-            "name": "测试患者",
-            "age": 45,
-            "gender": "male",
-            "symptom_description": "头痛发烧三天，咳嗽有黄痰，胸闷气短",
-            "lab_report": {
-                "wbc": 12.5, "neutrophil_pct": 85, "lymphocyte_pct": 10,
-                "crp": 45, "temperature": 38.6, "systolic_bp": 130,
-                "diastolic_bp": 85, "heart_rate": 98, "respiratory_rate": 22,
-                "spo2": 93, "rbc": 4.5, "hemoglobin": 135,
-                "hematocrit": 40, "platelet": 280, "glucose": 5.2,
-                "creatinine": 80, "bun": 4.8, "alt": 25, "ast": 22,
-                "total_cholesterol": 4.6, "triglycerides": 1.3
-            },
-        }
-        resp = await client.post("/api/diagnose", json=payload)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "diagnosis" in data
-        assert "similar_cases" in data
-        assert "top_prediction" in data["diagnosis"]
-        assert len(data["diagnosis"]["top3"]) == 3
-        print(f"诊断结果: {data['diagnosis']['top_prediction']}")
-```
-
-- [ ] **Step 2: 运行测试**
+- [x] **Step 2: 运行测试**
 
 ```bash
 cd backend && pip install pytest httpx
 python -m pytest tests/ -v
 ```
-Expected: 3 tests pass（需要数据库运行中且模型已训练）
+Expected: 3 tests pass
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add backend/tests/
@@ -2674,5 +2060,68 @@ git commit -m "test: add end-to-end diagnosis API tests"
 ```
 
 ---
+
+### Task 15: OCR 化验单识别（百度 OCR + EasyOCR 降级 + DeepSeek 结构化）
+
+**Files:**
+- Create: `backend/app/api/ocr.py`
+- Create: `backend/app/services/ocr_service.py`
+- Modify: `backend/app/config.py` — 新增 `baidu_ocr_app_id`, `baidu_ocr_api_key`, `baidu_ocr_secret_key`, `deepseek_api_key`
+- Modify: `backend/app/api/router.py` — 注册 OCR 路由
+- Modify: `backend/requirements.txt` — 新增 `easyocr`, `openai`, `Pillow`, `baidu-aip`
+- Modify: `backend/Dockerfile` — 安装 EasyOCR 系统依赖（libgl1, libgomp1 等）
+- Modify: `docker-compose.yml` — 添加 `BAIDU_OCR_*` 和 `DEEPSEEK_API_KEY` 环境变量
+
+**Architecture:**
+```
+化验单图片 → 百度 OCR 精确版 (主引擎)
+                │
+                ├── 成功 ──→ DeepSeek 结构化 ──→ {"lab_data": {...}}
+                │
+                └── 失败 ──→ EasyOCR (降级) ──→ DeepSeek 结构化 ──→ 同上
 ```
 
+**Interfaces:**
+- Consumes: `settings.baidu_ocr_*`, `settings.deepseek_api_key`
+- Produces: `POST /api/ocr` — 接受图片上传，返回 `{"lab_data": {...}, "raw_text": "..."}`
+
+**Key implementation details:**
+- `OCRService` 单例模式，百度 OCR client 和 EasyOCR Reader 均延迟加载
+- `baidu_available` 属性检查凭证是否配置，未配置直接走 EasyOCR
+- 百度 OCR 调用 `accurateBasic` API（精确版，中英文混合），图片以 base64 传入
+- 百度 OCR 失败时 `logger.warning` 记录原因，自动降级到 EasyOCR
+- 前端 `LabReportForm` 含图片上传区和 OCR 按钮，识别结果自动填入表单字段
+
+- [x] **Step 1: 更新 requirements.txt**
+
+```
+easyocr>=1.7.0
+openai>=1.0.0
+Pillow>=10.0.0
+baidu-aip>=4.16.0
+```
+
+- [x] **Step 2: 更新 config.py 添加 OCR 和 DeepSeek 配置项**
+
+- [x] **Step 3: 创建 ocr_service.py（百度主引擎 + EasyOCR 降级 + DeepSeek 结构化）**
+
+- [x] **Step 4: 创建 api/ocr.py（POST /api/ocr 端点）**
+
+- [x] **Step 5: 注册路由、更新 Dockerfile 系统依赖、更新 docker-compose.yml 环境变量**
+
+- [x] **Step 6: 启动验证**
+
+```bash
+docker compose up --build
+curl -X POST http://localhost:8000/api/ocr -F "file=@lab_report.jpg"
+```
+Expected: 返回 21 项化验指标 JSON
+
+- [x] **Step 7: Commit**
+
+```bash
+git add backend/app/services/ocr_service.py backend/app/api/ocr.py \
+        backend/app/api/router.py backend/app/config.py \
+        backend/requirements.txt backend/Dockerfile docker-compose.yml
+git commit -m "feat: add OCR lab report recognition (Baidu OCR + EasyOCR fallback + DeepSeek)"
+```
