@@ -164,34 +164,52 @@ def generate_report(
         y -= 13
 
     # 治疗建议
-    y -= 8
+    y -= 12
     c.line(30, y, w - 30, y)
-    y -= 18
+    y -= 20
     draw_text("治疗建议", 30, y, 14, PRIMARY)
-    y -= 18
+    y -= 20
     treatment = diagnosis.get("treatment_suggestion", "请咨询医生")
-    if len(treatment) > 120:
-        treatment = treatment[:117] + "..."
-    y = draw_text(treatment, 40, y, 10, DARK)
+    if len(treatment) > 100:
+        # 折行处理
+        part1 = treatment[:100]
+        part2 = treatment[100:200] if len(treatment) > 100 else ""
+        y = draw_text(part1, 40, y, 10, DARK)
+        if part2:
+            y = draw_text(part2, 40, y, 10, DARK)
+        y -= 2
+    else:
+        y = draw_text(treatment, 40, y, 10, DARK)
 
     # 相似病例
     if similar_cases:
-        y -= 10
+        y -= 12
+        # 如果空间不够，跳过相似病例区域
+        if y < 140:
+            y = 120
         c.line(30, y, w - 30, y)
+        y -= 20
+        draw_text("相似历史病例 (RAG 检索)", 30, y, 12, PRIMARY)
         y -= 18
-        draw_text(f"相似历史病例 (RAG 检索)", 30, y, 12, PRIMARY)
-        y -= 16
+        count = 0
         for sc in similar_cases[:3]:
+            if y < 50:
+                break
             sim = sc["similarity"] * 100
             text = f"相似度 {sim:.0f}% | {sc['diagnosis']}"
-            if len(text) > 70:
-                text = text[:67] + "..."
+            if len(text) > 65:
+                text = text[:62] + "..."
             y = draw_text(text, 40, y, 9, GRAY)
+            count += 1
 
-    # 页脚
+    # 页脚 —— 与内容保持最小间距
+    footer_y = min(y - 25, 40)
+    c.setStrokeColor(HexColor("#E2E8F0"))
+    c.setLineWidth(0.5)
+    c.line(30, footer_y + 10, w - 30, footer_y + 10)
     c.setFont(FONT, 8)
     c.setFillColor(GRAY)
-    c.drawString(30, 20, "本报告由 AI 生成，仅供学习参考，不构成医疗建议。")
+    c.drawString(30, footer_y, "本报告由 AI 生成，仅供学习参考，不构成医疗建议。")
 
     c.save()
     return buf.getvalue()
