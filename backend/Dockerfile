@@ -35,4 +35,4 @@ CMD ["sh", "-c", "\
   else \
     echo '模型已训练，跳过'; \
   fi && \
-  uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+  uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
