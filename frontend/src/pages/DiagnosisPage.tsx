@@ -89,6 +89,29 @@ export default function DiagnosisPage() {
     }
   };
 
+  const handleExport = async () => {
+    if (!result) return;
+    try {
+      const blob = await api.exportReport({
+        name: formData.name,
+        age: formData.age,
+        gender: formData.gender,
+        symptom_description: formData.symptom_description,
+        lab_data: formData.lab_report,
+        diagnosis: result.diagnosis,
+        similar_cases: result.similar_cases,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `诊断报告_${formData.name}_${new Date().toLocaleDateString('zh-CN')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('PDF 导出失败');
+    }
+  };
+
   const handleReset = () => {
     setResult(null);
     setError('');
@@ -148,13 +171,14 @@ export default function DiagnosisPage() {
           <>
             <DiagnosisResultCard result={result.diagnosis} />
             <SimilarCasesList cases={result.similar_cases} />
-            <button
-              className="btn btn-outline"
-              onClick={handleReset}
-              style={{ width: '100%' }}
-            >
-              🔄 重新诊断
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button className="btn btn-outline" onClick={handleExport}>
+                📥 导出报告
+              </button>
+              <button className="btn btn-outline" onClick={handleReset} style={{ flex: 1 }}>
+                🔄 重新诊断
+              </button>
+            </div>
           </>
         ) : (
           <div className="card">

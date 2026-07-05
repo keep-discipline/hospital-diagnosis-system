@@ -38,6 +38,11 @@ export const api = {
     return client.get(`/patients/${id}`);
   },
 
+  /** 导出诊断报告 PDF */
+  exportReport(data: Record<string, unknown>): Promise<Blob> {
+    return client.post('/report', data, { responseType: 'blob' }).then(r => r.data);
+  },
+
   /** 健康检查 */
   healthCheck(): Promise<{ data: { status: string } }> {
     return client.get('/health');
