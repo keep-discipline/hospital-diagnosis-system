@@ -24,12 +24,13 @@ export const api = {
     return client.get('/diseases');
   },
 
-  /** 分页查询病人 */
+  /** 分页查询病人，支持搜索 */
   getPatients(
     skip = 0,
-    limit = 20
-  ): Promise<{ data: PatientSummary[] }> {
-    return client.get('/patients', { params: { skip, limit } });
+    limit = 20,
+    q = ''
+  ): Promise<{ data: { total: number; data: PatientSummary[] } }> {
+    return client.get('/patients', { params: { skip, limit, q } });
   },
 
   /** 查询单个病人详情 */

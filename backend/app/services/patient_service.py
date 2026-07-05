@@ -1,6 +1,6 @@
 """病人数据管理服务"""
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.patient import Patient
@@ -53,6 +53,29 @@ async def get_all_patients(
         .limit(limit)
     )
     return list(result.scalars().all())
+
+
+async def search_patients(
+    db: AsyncSession,
+    q: str = "",
+    skip: int = 0,
+    limit: int = 20,
+) -> tuple[list[Patient], int]:
+    """搜索病人（姓名/症状/诊断），返回结果+总数"""
+    query = select(Patient)
+    if q:
+        like = f"%{q}%"
+        query = query.where(
+            Patient.name.ilike(like)
+            | Patient.symptom_description.ilike(like)
+            | Patient.diagnosis.ilike(like)
+        )
+    total_result = await db.execute(select(func.count()).select_from(query.subquery()))
+    total = total_result.scalar() or 0
+    patients_result = await db.execute(
+        query.order_by(Patient.created_at.desc()).offset(skip).limit(limit)
+    )
+    return list(patients_result.scalars().all()), total
 
 
 async def import_mock_patients(

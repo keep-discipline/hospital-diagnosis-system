@@ -10,25 +10,25 @@ from app.services import patient_service
 router = APIRouter(prefix="/patients", tags=["patients"])
 
 
-@router.get("", response_model=list[PatientSummary])
+@router.get("")
 async def list_patients(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
+    q: str = Query("", description="搜索关键词：姓名/症状/诊断"),
     db: AsyncSession = Depends(get_db),
 ):
-    """分页查询病人列表"""
-    patients = await patient_service.get_all_patients(db, skip=skip, limit=limit)
-    return [
-        PatientSummary(
-            id=p.id,
-            name=p.name,
-            age=p.age,
-            gender=p.gender,
-            diagnosis=p.diagnosis,
-            created_at=p.created_at,
-        )
-        for p in patients
-    ]
+    """分页查询病人列表，支持搜索"""
+    patients, total = await patient_service.search_patients(db, q=q, skip=skip, limit=limit)
+    return {
+        "total": total,
+        "data": [
+            PatientSummary(
+                id=p.id, name=p.name, age=p.age, gender=p.gender,
+                diagnosis=p.diagnosis, created_at=p.created_at,
+            )
+            for p in patients
+        ],
+    }
 
 
 @router.get("/{patient_id}", response_model=PatientDetail)

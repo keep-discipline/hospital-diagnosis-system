@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
 import DiagnosisPage from './pages/DiagnosisPage'
 import ResultPage from './pages/ResultPage'
+import HistoryPage from './pages/HistoryPage'
 
 function App() {
   return (
@@ -14,12 +15,21 @@ function App() {
               <div className="header-subtitle">RAG + Deep Learning · AI-Powered Diagnosis</div>
             </div>
           </div>
+          <nav className="header-nav">
+            <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+              🔍 诊断
+            </NavLink>
+            <NavLink to="/history" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+              📋 历史记录
+            </NavLink>
+          </nav>
         </header>
 
         <main className="app-main">
           <Routes>
             <Route path="/" element={<DiagnosisPage />} />
             <Route path="/result" element={<ResultPage />} />
+            <Route path="/history" element={<HistoryPage />} />
           </Routes>
         </main>
 
