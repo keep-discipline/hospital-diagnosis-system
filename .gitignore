@@ -8,3 +8,6 @@ dist/
 data/models/*
 !data/models/.gitkeep
 .DS_Store
+data/MedDG/
+data/chinese_medical_dialogue/
+data/neike_sample.csv

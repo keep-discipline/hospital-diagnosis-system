@@ -13,10 +13,10 @@
 - Python 3.11+, Node.js 20+
 - 前端默认运行在 localhost:3000，后端 localhost:8000
 - 所有 API 路径以 `/api/` 为前缀
-- Embedding 模型默认 `shibing624/text2vec-base-chinese`（768 维）
+- Embedding 模型默认 `BAAI/bge-base-zh-v1.5`（768 维）
 - 诊断模型为 MLP 结构：输入 20 维化验指标 → 输出 10 种疾病概率
 - 编码规范：英文变量名，注释用中文
-- 模拟数据：10 种疾病，500 条病例
+- RAG 数据：22 万条真实医疗对话 → 清洗后 1.8 万条，191 种疾病（已替换合成数据）
 - OCR 引擎：百度 OCR 精确版（主）+ EasyOCR（降级）+ DeepSeek（结构化）
 
 ---
@@ -2125,3 +2125,45 @@ git add backend/app/services/ocr_service.py backend/app/api/ocr.py \
         backend/requirements.txt backend/Dockerfile docker-compose.yml
 git commit -m "feat: add OCR lab report recognition (Baidu OCR + EasyOCR fallback + DeepSeek)"
 ```
+
+---
+
+### Task 16: 前端 UX 优化 — 表单校验 + 加载动画
+
+- [x] **PatientForm**: 实时字段校验（姓名/年龄/性别/症状），红色错误提示 + 必填标记 + 字数统计
+- [x] **DiagnosisPage**: 四步加载动画（分析症状→检索病例→AI诊断→生成方案），骨架屏 shimmer
+- [x] **LoadingSkeleton**: 新组件，步骤进度 + 骨架卡片
+- [x] **CSS**: 校验状态、spinner、shimmer 动画、alert 样式
+
+---
+
+### Task 17: OCR 自动提取患者信息
+
+- [x] **ocr_service.py**: DeepSeek prompt 加入患者信息提取（name/age/gender）
+- [x] **LabReportForm**: 新增 `onPatientInfo` 回调
+- [x] **DiagnosisPage**: OCR 后自动填入 PatientForm 姓名/年龄/性别
+
+---
+
+### Task 18: RAG 数据源升级 — 真实医疗对话
+
+- [x] **数据下载**: Chinese-medical-dialogue-data（22 万条内科对话 CSV）
+- [x] **数据清洗**: `backend/scripts/clean_medical_data.py` — NLP 清洗，200+ 常见病名精确匹配，标题优先
+- [x] **结果**: 清洗出 14.9 万条有效记录，191 种疾病，分层采样 1.8 万条
+- [x] **导入脚本**: `backend/scripts/import_real_data.py` — 批量 embedding + pgvector 入库
+
+---
+
+### Task 19: Embedding 模型升级
+
+- [x] **切换**: `text2vec-base-chinese` → `BAAI/bge-base-zh-v1.5`（768 维不变，零代码改动）
+- [x] **docker-compose.yml**: 更新 `EMBEDDING_MODEL` 环境变量
+
+---
+
+### Task 20: 安全 — API Key 管理
+
+- [x] **docker-compose.yml**: 硬编码密钥 → `${VAR}` 引用
+- [x] **.env.example**: 环境变量模板
+- [x] **.gitignore**: `.env` 已配置
+- [x] **git history**: `filter-branch` 清洗全部 22 个 commits 中的密钥

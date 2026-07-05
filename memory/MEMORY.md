@@ -1,0 +1,2 @@
+- [智能医疗诊断辅助系统 — 项目概览](hospital-system-project-overview.md) — 完整项目架构、技术栈、运行方式
+- [关键设计决策和修复记录](hospital-design-decisions.md) — 选型原因、踩坑和修复方案

@@ -85,7 +85,7 @@
   - DeepSeek API 结构化解析
 - 💊 **治疗建议**：根据诊断结果自动生成治疗建议
 - 🐳 **一键部署**：Docker Compose 三容器编排，开箱即用
-- 📊 **10 种疾病覆盖**：肺炎、感冒、支气管炎、高血压、糖尿病、冠心病、胃炎、尿路感染、贫血、甲亢
+- 📊 **191 种疾病覆盖**：基于 22 万条真实医疗对话数据，覆盖内科常见病
 - 🎨 **现代 UI**：React + TypeScript 响应式界面，左右分栏布局
 
 ---
@@ -97,7 +97,7 @@
 | 前端 | React 18 + TypeScript 5 + Vite | SPA，端口 3000 |
 | 后端 | FastAPI (Python 3.11) | 异步 API，端口 8000 |
 | 数据库 | PostgreSQL 16 + pgvector | 结构化存储 + 向量检索，端口 5432 |
-| Embedding | `shibing624/text2vec-base-chinese` | 中文文本向量化，768 维 |
+| Embedding | `BAAI/bge-base-zh-v1.5` | 中文检索最强通用模型，768 维 |
 | 诊断模型 | PyTorch MLP (20→128→64→32→10) | 训练准确率 ~94% |
 | OCR | 百度 OCR + EasyOCR + DeepSeek | 化验单图片识别 + AI 结构化 |
 | 部署 | Docker + Docker Compose | 三容器一键编排 |
