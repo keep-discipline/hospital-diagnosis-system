@@ -7,16 +7,15 @@ metadata:
 
 # 关键设计决策
 
-1. **方案选型**: 模块化分层架构（方案A）而非微服务——单 FastAPI 应用，内部模块化，Docker Compose 编排
-2. **MLP vs Transformer**: 化验单是结构化数值数据，用 MLP 而非 Transformer。Transformer 仅用于 RAG 的文本 embedding
-3. **pgvector vs 独立向量数据库**: 用 pgvector 扩展，一个 PG 同时存结构化数据和向量，简化架构
-4. **模型加载策略**: Embedding 模型和 DL 模型都采用全局单例模式，启动时加载一次
-5. **RAG + DL 并行**: `/api/diagnose` 中用 `asyncio.gather` 并行执行两个通道
-6. **OCR 双引擎 + AI 结构化**: 百度 OCR 精确版（主）+ EasyOCR（降级）+ DeepSeek 结构化，百度不可用时自动降级
-7. **RAG 数据策略**: 用真实医疗对话（22万条 → 清洗出 18K/191 种疾病），不用合成文本——多样性远超 10 种病的模拟数据
-8. **Embedding 选型**: text2vec → bge-base-zh-v1.5，中文检索 benchmark 更强，零代码切换（同 768 维）
-9. **OCR 自动提取患者信息**: 化验单本身有姓名/年龄/性别，深度学习 prompt 中加字段即可同时提取，避免重复录入
-10. **API Key 安全**: 所有密钥通过 `.env` 文件管理，git 历史已用 `filter-branch` 清洗
+1. **方案选型**: 模块化分层架构——单 FastAPI 应用，内部模块化，Docker Compose 编排
+2. **RAG + DL 双通道并行**: `/api/diagnose` 中 `asyncio.gather` 并行执行
+3. **RAG 用真实数据**: 中文医疗对话（22万→1.8万条，191种病）——文本检索需要多样性
+4. **DL 用合成数据**: 医学知识驱动的化验指标模式（62种病，12000条）——中文结构化化验数据不可得
+5. **Embedding 选型**: text2vec → bge-base-zh-v1.5（768维），中文检索更强
+6. **DL 模型选型**: XGBoost 主力（50.9%, 62类），MLP 做基线对照（39.9%）——表格数据上梯度提升优于 MLP
+7. **OCR 双引擎**: 百度 OCR 精确版 + EasyOCR 降级 + DeepSeek 结构化 + 自动提取患者信息
+8. **API Key 安全**: `.env` 管理，git 历史已清洗
+9. **开发体验**: 源码挂载 + uvicorn --reload，改代码自动生效
 
 ## 遇到的坑和修复
 
