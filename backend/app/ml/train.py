@@ -1,10 +1,6 @@
-"""诊断模型训练脚本 v2
+"""诊断模型训练脚本
 
-改进:
-- 60 种疾病, 7200+ 条数据
-- MLP + XGBoost 双模型对比
-- 8:1:1 train/val/test 划分
-- 选择最优模型保存
+62 种疾病, XGBoost 主力 + MLP 基线, 8:1:1 划分
 """
 
 import json
@@ -17,7 +13,7 @@ from sklearn.metrics import accuracy_score, f1_score, classification_report
 import xgboost as xgb
 from pathlib import Path
 
-from app.ml.data_generator_v2 import generate_mock_data, LAB_FEATURES, DISEASE_LABELS_V2
+from app.ml.data_generator import generate_mock_data, LAB_FEATURES, DISEASE_LABELS_V2
 from app.ml.diagnosis_model import DiagnosisPredictor
 
 
