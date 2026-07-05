@@ -13,6 +13,7 @@ RUN sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.li
     libsm6 \
     libxext6 \
     libxrender1 \
+    fonts-wqy-zenhei fonts-wqy-microhei \
     && rm -rf /var/lib/apt/lists/*
 
 # 安装 Python 依赖（使用清华镜像加速）

@@ -10,21 +10,28 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import os, glob
 
-# 自动查找中文字体
+# 自动查找中文字体（优先 .ttf，.ttc 需要指定索引）
 _font_path = None
+_font_index = 0
 for root, _, files in os.walk("/usr/share/fonts"):
     for f in files:
-        if f.endswith((".ttf", ".ttc")) and any(k in f.lower() for k in ("uming", "arphic", "wqy", "noto", "wenkai")):
+        if f.endswith((".ttf", ".ttc")) and any(k in f.lower() for k in ("wqy", "zenhei", "micro", "uming", "wenkai")):
             _font_path = os.path.join(root, f)
             break
     if _font_path:
         break
 
 if _font_path:
-    pdfmetrics.registerFont(TTFont("ChineseFont", _font_path))
+    is_ttc = _font_path.endswith(".ttc")
+    try:
+        pdfmetrics.registerFont(TTFont("ChineseFont", _font_path, subfontIndex=0))
+    except Exception:
+        pdfmetrics.registerFont(TTFont("ChineseFont", _font_path))
     FONT = "ChineseFont"
 else:
     FONT = "Helvetica"
+
+print(f"[PDF] Font: {_font_path or 'Helvetica (fallback)'}")
 
 PRIMARY = HexColor("#0891B2")
 DARK = HexColor("#1E293B")
