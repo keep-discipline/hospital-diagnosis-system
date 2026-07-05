@@ -5,6 +5,7 @@ dist/
 .env
 *.pt
 *.pth
+!data/models/*.pkl
 data/models/*
 !data/models/.gitkeep
 .DS_Store

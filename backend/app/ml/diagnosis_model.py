@@ -32,27 +32,29 @@ LAB_FEATURE_NAMES = [
 
 
 class DiagnosisPredictor(nn.Module):
-    """MLP 疾病诊断预测模型
+    """MLP 疾病诊断预测模型 (v2 — 60类深度版)
 
     结构:
-        Input(21) → BatchNorm → Linear(128) → ReLU → Dropout(0.3)
-                 → Linear(64) → ReLU → Dropout(0.3)
-                 → Linear(32) → ReLU
-                 → Linear(10) → Softmax
+        Input(21) → BatchNorm → Linear(256) → ReLU → Dropout(0.3)
+                  → Linear(256) → ReLU → Dropout(0.3)
+                  → Linear(128) → ReLU → Dropout(0.3)
+                  → Linear(64) → ReLU
+                  → Linear(N) → Softmax
     """
 
     def __init__(
         self,
         input_dim: int = 21,
-        num_diseases: int = 10,
+        num_diseases: int = 60,
         dropout: float = 0.3,
     ):
         super().__init__()
         self.batch_norm = nn.BatchNorm1d(input_dim)
-        self.fc1 = nn.Linear(input_dim, 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, 32)
-        self.output = nn.Linear(32, num_diseases)
+        self.fc1 = nn.Linear(input_dim, 256)
+        self.fc2 = nn.Linear(256, 256)
+        self.fc3 = nn.Linear(256, 128)
+        self.fc4 = nn.Linear(128, 64)
+        self.output = nn.Linear(64, num_diseases)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -62,6 +64,8 @@ class DiagnosisPredictor(nn.Module):
         x = torch.relu(self.fc2(x))
         x = self.dropout(x)
         x = torch.relu(self.fc3(x))
+        x = self.dropout(x)
+        x = torch.relu(self.fc4(x))
         x = self.output(x)
         return torch.softmax(x, dim=-1)
 
