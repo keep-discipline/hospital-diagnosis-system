@@ -5,7 +5,11 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
 
-engine = create_async_engine(settings.database_url, echo=False)
+engine = create_async_engine(
+    settings.database_url, echo=False,
+    pool_pre_ping=True,       # 连接前检测有效性
+    pool_recycle=3600,        # 1小时回收连接
+)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -16,10 +20,7 @@ class Base(DeclarativeBase):
 async def get_db() -> AsyncSession:
     """FastAPI 依赖注入：获取数据库 session"""
     async with async_session() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+        yield session
 
 
 async def init_db():
