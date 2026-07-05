@@ -43,11 +43,11 @@
 │   │                   │   │                  │           │
 │   │  症状文本         │   │  化验单数据      │           │
 │   │     ↓             │   │     ↓            │           │
-│   │  Transformer      │   │  MLP 模型        │           │
-│   │  Embedding        │   │  (20→128→64→32  │           │
-│   │     ↓             │   │    →10)          │           │
-│   │  pgvector         │   │     ↓            │           │
-│   │  余弦检索         │   │  Softmax         │           │
+│   │  bge-base-zh-v1.5 │   │  XGBoost 模型    │           │
+│   │  Embedding        │   │  (62 种疾病)     │           │
+│   │     ↓             │   │     ↓            │           │
+│   │  pgvector         │   │  predict_proba   │           │
+│   │  余弦检索         │   │  Top-3 + 建议    │           │
 │   │     ↓             │   │     ↓            │           │
 │   │  Top-5 相似病例   │   │  Top-3 疾病预测  │           │
 │   └──────────────────┘   └──────────────────┘           │
@@ -98,7 +98,7 @@
 | 后端 | FastAPI (Python 3.11) | 异步 API，端口 8000 |
 | 数据库 | PostgreSQL 16 + pgvector | 结构化存储 + 向量检索，端口 5432 |
 | Embedding | `BAAI/bge-base-zh-v1.5` | 中文检索最强通用模型，768 维 |
-| 诊断模型 | PyTorch MLP (20→128→64→32→10) | 训练准确率 ~94% |
+| 诊断模型 | XGBoost 主力 + MLP 基线 | 62种病, 50.9% (随机基线 1.7%) |
 | OCR | 百度 OCR + EasyOCR + DeepSeek | 化验单图片识别 + AI 结构化 |
 | 部署 | Docker + Docker Compose | 三容器一键编排 |
 | 容器化 | `python:3.11-slim` / `node:20-slim` / `nginx:alpine` | 镜像构建 |
