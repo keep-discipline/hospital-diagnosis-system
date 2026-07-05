@@ -14,7 +14,7 @@ class EmbeddingModel:
 
     def __init__(self, model_name: str | None = None):
         model_name = model_name or settings.embedding_model
-        self._model = SentenceTransformer(model_name)
+        self._model = SentenceTransformer(model_name, local_files_only=True)
 
     def encode(self, text: str) -> list[float]:
         """单条文本 → 向量（已 L2 归一化，方便余弦相似度计算）"""
